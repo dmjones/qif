@@ -36,6 +36,8 @@ const (
 	NotCleared                  = iota
 )
 
+type UnsupportedFieldError error
+
 // A Transaction contains the fields common to all transaction types.
 type Transaction interface {
 
@@ -74,10 +76,10 @@ func (t *transaction) Memo() string {
 }
 
 func (t *transaction) Status() ClearedStatus {
-	return t.Status()
+	return t.status
 }
 
-func (t *transaction) add(line string, config Config) error {
+func (t *transaction) parseTransactionField(line string, config Config) error {
 	if line == "" {
 		return errors.New("line is empty")
 	}
@@ -112,7 +114,7 @@ func (t *transaction) add(line string, config Config) error {
 		return nil
 
 	default:
-		return errors.Errorf("cannot process line '%s'", line)
+		return UnsupportedFieldError(errors.Errorf("cannot process line '%s'", line))
 	}
 }
 

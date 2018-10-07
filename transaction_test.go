@@ -89,3 +89,62 @@ func TestClearedStatus(t *testing.T) {
 	_, err := parseClearedStatus("Z") // not real
 	assert.Error(t, err)
 }
+
+func TestEmptyTransactionLine(t *testing.T) {
+	tx := &transaction{}
+	err := tx.parseTransactionField("", Config{})
+	assert.Error(t, err)
+}
+
+func TestBadTransactionLine(t *testing.T) {
+	tx := &transaction{}
+	err := tx.parseTransactionField("Z1234", Config{})
+
+	_, ok := err.(UnsupportedFieldError)
+	assert.True(t, ok)
+}
+
+func TestParseTransactionDate(t *testing.T) {
+	const dateString = "31/12/99"
+	d, err := time.Parse("02/01/06", dateString)
+	require.NoError(t, err)
+
+	tx := &transaction{}
+	err = tx.parseTransactionField("D"+dateString, Config{})
+	require.NoError(t, err)
+
+	require.Equal(t, d, tx.Date())
+}
+
+func TestParseTransactionAmountT(t *testing.T) {
+	tx := &transaction{}
+	err := tx.parseTransactionField("T12.99", Config{})
+	require.NoError(t, err)
+
+	require.Equal(t, 1299, tx.Amount())
+}
+
+func TestParseTransactionAmountU(t *testing.T) {
+	tx := &transaction{}
+	err := tx.parseTransactionField("U12.99", Config{})
+	require.NoError(t, err)
+
+	require.Equal(t, 1299, tx.Amount())
+}
+
+func TestParseTransactionMemo(t *testing.T) {
+	const memo = "hello, world"
+	tx := &transaction{}
+	err := tx.parseTransactionField("M"+memo, Config{})
+	require.NoError(t, err)
+
+	require.Equal(t, memo, tx.Memo())
+}
+
+func TestParseTransactionStatus(t *testing.T) {
+	tx := &transaction{}
+	err := tx.parseTransactionField("CX", Config{})
+	require.NoError(t, err)
+
+	require.EqualValues(t, Reconciled, tx.Status())
+}
