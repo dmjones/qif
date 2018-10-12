@@ -14,6 +14,8 @@
 
 package qif
 
+import "github.com/pkg/errors"
+
 type AccountType int
 
 const (
@@ -60,18 +62,121 @@ type bankingTransaction struct {
 	address        []string
 	addressMessage string
 	category       string
+	splits         []Split
+}
+
+func (t *bankingTransaction) Num() string {
+	return t.num
+}
+
+func (t *bankingTransaction) Payee() string {
+	return t.payee
+}
+
+func (t *bankingTransaction) Address() []string {
+	return t.address
+}
+
+func (t *bankingTransaction) AddressMessage() string {
+	return t.addressMessage
+}
+
+func (t *bankingTransaction) Category() string {
+	return t.category
+}
+
+func (t *bankingTransaction) Splits() []Split {
+	return t.splits
+}
+
+func (t *bankingTransaction) parseBankingTransactionField(line string, config Config) error {
+	if line == "" {
+		return errors.New("line is empty")
+	}
+
+	err := t.parseTransactionField(line, config)
+	if err == nil {
+		// Must have been a field from our embedded struct
+		return nil
+	}
+
+	if _, ok := err.(UnsupportedFieldError); !ok {
+		// An actual error happened
+		return err
+	}
+
+	// Otherwise, try and parse it here
+
+	switch line[0] {
+	case 'N':
+		t.num = line[1:]
+		return nil
+	case 'P':
+		t.payee = line[1:]
+		return nil
+	case 'A':
+		// How many do we have already?
+		if len(t.address) >= 5 {
+			t.addressMessage = line[1:]
+		} else {
+			t.address = append(t.address, line[1:])
+		}
+		return nil
+	case 'L':
+		t.category = line[1:]
+		return nil
+
+		// These split fields must be in order, based on statement "The non-split items can be in any sequence"
+		// from the spec.
+
+	case 'S': // Category
+		split := Split{}
+		cat := line[1:]
+		split.Category = &cat
+		t.splits = append(t.splits, split)
+		return nil
+	case 'E': // Memo
+		// This could be the first element of a new split, but only if there isn't an existing split, or the
+		// existing split already has an 'E' or a '$' field.
+		if len(t.splits) == 0 || t.splits[len(t.splits)-1].Memo != nil ||
+			t.splits[len(t.splits)-1].Amount != nil {
+			t.splits = append(t.splits, Split{})
+		}
+
+		memo := line[1:]
+		t.splits[len(t.splits)-1].Memo = &memo
+		return nil
+
+	case '$': // Amount
+		amt, err := parseAmount(line[1:])
+		if err != nil {
+			return errors.Wrap(err, "failed to parse split amount")
+		}
+
+		// This could be the first element of a new split, but only if there isn't an existing split, or the
+		// existing split already has '$' field.
+		if len(t.splits) == 0 || t.splits[len(t.splits)-1].Amount != nil {
+			t.splits = append(t.splits, Split{})
+		}
+
+		t.splits[len(t.splits)-1].Amount = &amt
+		return nil
+
+	default:
+		return UnsupportedFieldError(errors.Errorf("cannot process line '%s'", line))
+	}
 }
 
 // A Split is used to tag part of a transaction with a separate category and description.
-type Split interface {
+type Split struct {
 
 	// Category of this transaction split.
-	Category() string
+	Category *string
 
 	// Memo is a string description of the transaction split.
-	Memo() string
+	Memo *string
 
 	// Amount stores the transaction split value in minor currency units. For instance, a $12.99 transaction
 	// will be 1299.
-	Amount() int
+	Amount *int
 }
