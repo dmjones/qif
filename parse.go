@@ -39,24 +39,34 @@ func DefaultConfig() Config {
 	}
 }
 
-type Reader struct {
+// A Reader consumes QIF data and returns parsed transactions.
+type Reader interface {
+
+	// Read returns the next transaction from the input data.
+	Read() (Transaction, error)
+
+	// ReadAll returns all the remaining transactions from the input data.
+	ReadAll() ([]Transaction, error)
+}
+
+type reader struct {
 	in           *bufio.Scanner
 	config       Config
 	headerParsed bool
 }
 
-func NewReader(r io.Reader) *Reader {
+func NewReader(r io.Reader) *reader {
 	return NewReaderWithConfig(r, DefaultConfig())
 }
 
-func NewReaderWithConfig(r io.Reader, config Config) *Reader {
-	return &Reader{
+func NewReaderWithConfig(r io.Reader, config Config) *reader {
+	return &reader{
 		in:     bufio.NewScanner(r),
 		config: config,
 	}
 }
 
-func (r *Reader) parseHeader() error {
+func (r *reader) parseHeader() error {
 	if !r.in.Scan() {
 		if err := r.in.Err(); err != nil {
 			return err
@@ -75,7 +85,7 @@ func (r *Reader) parseHeader() error {
 	}
 }
 
-func (r *Reader) Read() (Transaction, error) {
+func (r *reader) Read() (Transaction, error) {
 
 	if !r.headerParsed {
 		err := r.parseHeader()
@@ -91,6 +101,6 @@ func (r *Reader) Read() (Transaction, error) {
 	return nil, nil
 }
 
-func (r *Reader) ReadAll() ([]Transaction, error) {
+func (r *reader) ReadAll() ([]Transaction, error) {
 	return nil, nil
 }
