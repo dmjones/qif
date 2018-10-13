@@ -42,6 +42,20 @@ func TestUnexpectedEOF(t *testing.T) {
 	assert.Equal(t, -9950, e.Incomplete.Amount())
 }
 
+func TestBadHeader(t *testing.T) {
+	inputData := strings.Join([]string{
+		"!Type:Bonk",
+		"Mmemo",
+		"T-99.50",
+	}, "\n")
+
+	r := NewReader(strings.NewReader(inputData))
+
+	tx, err := r.ReadAll()
+	assert.Nil(t, tx)
+	assert.Error(t, err)
+}
+
 func TestReadOne(t *testing.T) {
 	inputData := strings.Join([]string{
 		cardHeader,
@@ -98,14 +112,32 @@ func TestSpecExample1(t *testing.T) {
 			{Category: strptr("Mort Int"), Amount: intptr(-74636)},
 		},
 	}
-	expected1.date, err = time.Parse("2/ 1/06", "6/ 1/94")
+	expected1.date, err = time.Parse("1/ 2/06", "6/ 1/94")
 	require.NoError(t, err)
 	expected1.amount = -100000
 
+	expected2 := &bankingTransaction{
+		payee: "Deposit",
+	}
+	expected2.date, err = time.Parse("1/ 2/06", "6/ 2/94")
+	require.NoError(t, err)
+	expected2.amount = 7500
+
+	expected3 := &bankingTransaction{
+		payee:    "Anthony Hopkins",
+		address:  []string{"P.O. Box 27027", "Tucson, AZ", "85726", "", ""},
+		category: "Entertain",
+	}
+	expected3.date, err = time.Parse("1/ 2/06", "6/ 3/94")
+	require.NoError(t, err)
+	expected3.amount = -1000
+	expected3.memo = "Film"
+
+	expected := []Transaction{expected1, expected2, expected3}
+
 	reader := NewReader(input)
 
-	tx1, err := reader.Read()
-	assert.Equal(t, expected1, tx1)
-
-	// TODO add the rest of the examples
+	txs, err := reader.ReadAll()
+	assert.NoError(t, err)
+	assert.Equal(t, expected, txs)
 }

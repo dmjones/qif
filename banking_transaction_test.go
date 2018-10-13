@@ -120,3 +120,9 @@ func TestTransactionField(t *testing.T) {
 
 	assert.Equal(t, memo, tx.Memo())
 }
+
+func TestEmptyLine(t *testing.T) {
+	tx := &bankingTransaction{}
+	err := tx.parseBankingTransactionField("", Config{})
+	assert.Error(t, err)
+}

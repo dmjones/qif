@@ -37,7 +37,7 @@ func TestDateParse(t *testing.T) {
 	}
 
 	for _, i := range inputs {
-		date, err := parseDate(i, true)
+		date, err := parseDate(i, false)
 		assert.NoError(t, err)
 		assert.Equalf(t, expectedDate, date, "failed for input %s", i)
 	}
@@ -110,7 +110,7 @@ func TestParseTransactionDate(t *testing.T) {
 	require.NoError(t, err)
 
 	tx := &transaction{}
-	err = tx.parseTransactionField("D"+dateString, Config{})
+	err = tx.parseTransactionField("D"+dateString, Config{DayFirst: true})
 	require.NoError(t, err)
 
 	require.Equal(t, d, tx.Date())

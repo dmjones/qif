@@ -158,7 +158,7 @@ func parseAmount(s string) (int, error) {
 
 // parseDate attempts to parse the given string with a variety of formats.
 // monthFirst controls whether mm/dd or dd/mm formats are used.
-func parseDate(s string, monthFirst bool) (date time.Time, err error) {
+func parseDate(s string, dayFirst bool) (date time.Time, err error) {
 	// The spec is vague on date formats. Based on wikipedia and other sources,
 	// this is a potential list of valid options (using Go reference time of
 	// Mon Jan 2 15:04:05 -0700 MST 2006).
@@ -184,12 +184,12 @@ func parseDate(s string, monthFirst bool) (date time.Time, err error) {
 	}
 
 	var first, second string
-	if monthFirst {
-		first = "1"
-		second = "2"
-	} else {
+	if dayFirst {
 		first = "2"
 		second = "1"
+	} else {
+		first = "1"
+		second = "2"
 	}
 
 	formats := []string{

@@ -16,18 +16,6 @@ package qif
 
 import "github.com/pkg/errors"
 
-type AccountType int
-
-const (
-	Cash       AccountType = iota
-	Bank                   = iota
-	CreditCard             = iota
-	//Investment = iota
-	//Asset = iota
-	//Liability = iota
-	//Invoice = iota
-)
-
 // A BankingTransaction contains the information associated with non-investment
 // transactions (i.e. Cash, Bank and CCard account types).
 type BankingTransaction interface {
