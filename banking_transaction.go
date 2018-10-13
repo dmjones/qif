@@ -28,24 +28,26 @@ const (
 	//Invoice = iota
 )
 
-// A BankingTransaction contains the information associated with non-investment transactions (i.e.
-// Cash, Bank and CCard account types).
+// A BankingTransaction contains the information associated with non-investment
+// transactions (i.e. Cash, Bank and CCard account types).
 type BankingTransaction interface {
 	Transaction
 
-	// Num contains the check or reference number for the transaction. Wikipedia suggest this may also contain
-	// "Deposit", "Transfer", "Print", "ATM", or "EFT".
+	// Num contains the check or reference number for the transaction. Wikipedia
+	// suggests this may also contain "Deposit", "Transfer", "Print", "ATM", or
+	// "EFT".
 	Num() string
 
 	// Payee describes the recipient of the transaction.
 	Payee() string
 
-	// Address contains no more than five address lines for the payee. Wikipedia suggests the first entry is usually
-	// the same as the Payee field.
+	// Address contains no more than five address lines for the payee. Wikipedia
+	// suggests the first entry is usually the same as the Payee field.
 	Address() []string
 
-	// AddressMessage contains an additional message associated with the payee address. This is only non-empty if
-	// the transaction address contained a special sixth line.
+	// AddressMessage contains an additional message associated with the payee
+	// address. This is only non-empty if the transaction address contained a
+	// special sixth line.
 	AddressMessage() string
 
 	// Category of the transaction.
@@ -89,7 +91,8 @@ func (t *bankingTransaction) Splits() []Split {
 	return t.splits
 }
 
-func (t *bankingTransaction) parseBankingTransactionField(line string, config Config) error {
+func (t *bankingTransaction) parseBankingTransactionField(line string,
+	config Config) error {
 	if line == "" {
 		return errors.New("line is empty")
 	}
@@ -126,8 +129,8 @@ func (t *bankingTransaction) parseBankingTransactionField(line string, config Co
 		t.category = line[1:]
 		return nil
 
-		// These split fields must be in order, based on statement "The non-split items can be in any sequence"
-		// from the spec.
+		// These split fields must be in order, based on statement "The
+		// non-split items can be in any sequence" from the spec.
 
 	case 'S': // Category
 		split := Split{}
@@ -136,8 +139,9 @@ func (t *bankingTransaction) parseBankingTransactionField(line string, config Co
 		t.splits = append(t.splits, split)
 		return nil
 	case 'E': // Memo
-		// This could be the first element of a new split, but only if there isn't an existing split, or the
-		// existing split already has an 'E' or a '$' field.
+		// This could be the first element of a new split, but only if there
+		// isn't an existing split, or the existing split already has an 'E' or
+		// a '$' field.
 		if len(t.splits) == 0 || t.splits[len(t.splits)-1].Memo != nil ||
 			t.splits[len(t.splits)-1].Amount != nil {
 			t.splits = append(t.splits, Split{})
@@ -153,8 +157,8 @@ func (t *bankingTransaction) parseBankingTransactionField(line string, config Co
 			return errors.Wrap(err, "failed to parse split amount")
 		}
 
-		// This could be the first element of a new split, but only if there isn't an existing split, or the
-		// existing split already has '$' field.
+		// This could be the first element of a new split, but only if there
+		// isn't an existing split, or the existing split already has '$' field.
 		if len(t.splits) == 0 || t.splits[len(t.splits)-1].Amount != nil {
 			t.splits = append(t.splits, Split{})
 		}
@@ -163,11 +167,13 @@ func (t *bankingTransaction) parseBankingTransactionField(line string, config Co
 		return nil
 
 	default:
-		return UnsupportedFieldError(errors.Errorf("cannot process line '%s'", line))
+		return UnsupportedFieldError(
+			errors.Errorf("cannot process line '%s'", line))
 	}
 }
 
-// A Split is used to tag part of a transaction with a separate category and description.
+// A Split is used to tag part of a transaction with a separate category and
+// description.
 type Split struct {
 
 	// Category of this transaction split.
@@ -176,7 +182,7 @@ type Split struct {
 	// Memo is a string description of the transaction split.
 	Memo *string
 
-	// Amount stores the transaction split value in minor currency units. For instance, a $12.99 transaction
-	// will be 1299.
+	// Amount stores the transaction split value in minor currency units. For
+	// instance, a $12.99 transaction will be 1299.
 	Amount *int
 }

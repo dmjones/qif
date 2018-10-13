@@ -41,18 +41,20 @@ type UnsupportedFieldError error
 // A Transaction contains the fields common to all transaction types.
 type Transaction interface {
 
-	// Date contains the year, month and day of the transaction. All other fields are zero.
+	// Date contains the year, month and day of the transaction. All other
+	// fields are zero.
 	Date() time.Time
 
-	// Amount stores the transaction value in minor currency units. For instance, a $12.99 transaction
-	// will be 1299.
+	// Amount stores the transaction value in minor currency units. For
+	// instance, a $12.99 transaction will be 1299.
 	Amount() int
 
 	// Memo is a string description of the transaction.
 	Memo() string
 
-	// Status indicates if the transaction is cleared. The value will be UnknownStatus if the transaction data
-	// did not specify a value for this field.
+	// Status indicates if the transaction is cleared. The value will be
+	// UnknownStatus if the transaction data did not specify a value for this
+	// field.
 	Status() ClearedStatus
 }
 
@@ -132,13 +134,14 @@ func parseClearedStatus(s string) (ClearedStatus, error) {
 	}
 }
 
-// parseAmount converts an amount string (such as '12.99') into minor currency units.
+// parseAmount converts an amount string (such as '12.99') into minor currency
+// units.
 func parseAmount(s string) (int, error) {
 
 	sMod := strings.Replace(s, ",", "", -1)
 
-	// Check format. Expect an optional minus or plus sign, then either a whole number or a decimal with numbers
-	// either side of the point.
+	// Check format. Expect an optional minus or plus sign, then either a whole
+	// number or a decimal with numbers either side of the point.
 	re := regexp.MustCompile(`[\-\+]?\d+\.\d{1,2}`)
 
 	if !re.MatchString(sMod) {
@@ -153,18 +156,20 @@ func parseAmount(s string) (int, error) {
 	return strconv.Atoi(strings.Replace(sMod, ".", "", 1))
 }
 
-// parseDate attempts to parse the given string with a variety of formats. monthFirst controls whether
-// mm/dd or dd/mm formats are used.
+// parseDate attempts to parse the given string with a variety of formats.
+// monthFirst controls whether mm/dd or dd/mm formats are used.
 func parseDate(s string, monthFirst bool) (date time.Time, err error) {
-	// The spec is vague on date formats. Based on wikipedia and other sources, this is a potential
-	// list of valid options (using Go reference time of Mon Jan 2 15:04:05 -0700 MST 2006).
+	// The spec is vague on date formats. Based on wikipedia and other sources,
+	// this is a potential list of valid options (using Go reference time of
+	// Mon Jan 2 15:04:05 -0700 MST 2006).
 
-	// Dates and months may or may not have leading zeroes. To reduce permutations, remove any leading zeros:
+	// Dates and months may or may not have leading zeroes. To reduce
+	// permutations, remove any leading zeros:
 	re := regexp.MustCompile(`(^|[^\d])0`)
 	sMod := re.ReplaceAllString(s, "$1")
 
-	// Some of the examples have spaces between days and months, in numeric form. Let's
-	// remove all spaces to be safe.
+	// Some of the examples have spaces between days and months, in numeric
+	// form. Let's remove all spaces to be safe.
 	re = regexp.MustCompile(`^[\d/ ]+$`)
 	if re.MatchString(sMod) {
 		sMod = strings.Replace(sMod, " ", "", -1)

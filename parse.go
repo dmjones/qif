@@ -24,7 +24,7 @@ import (
 // Config defines the configuration of the reader.
 type Config struct {
 
-	// MonthFirst specifies whether to interpret dates as mm/dd/yy... or dd/mm/yy...
+	// MonthFirst specifies whether to interpret dates as mm/dd or dd/mm.
 	MonthFirst bool
 }
 
@@ -55,7 +55,8 @@ type reader struct {
 	headerParsed bool
 }
 
-// NewReader creates a new Reader with a default configuration (see DefaultConfig).
+// NewReader creates a new Reader with a default configuration (see
+// DefaultConfig).
 func NewReader(r io.Reader) *reader {
 	return NewReaderWithConfig(r, DefaultConfig())
 }
