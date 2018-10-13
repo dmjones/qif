@@ -88,7 +88,7 @@ func (t *transaction) parseTransactionField(line string, config Config) error {
 
 	switch line[0] {
 	case 'D':
-		date, err := parseDate(line[1:], config.MonthFirst)
+		date, err := parseDate(line[1:], config.DayFirst)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse date")
 		}

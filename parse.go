@@ -21,37 +21,38 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Config defines the configuration of the reader.
-type Config struct {
-
-	// MonthFirst specifies whether to interpret dates as mm/dd or dd/mm.
-	MonthFirst bool
-}
-
-// DefaultConfig returns the default configuration used by NewReader:
-//
-//  Config{
-//    MonthFirst: true,
-//  }
-func DefaultConfig() Config {
-	return Config{
-		MonthFirst: true,
-	}
-}
+const (
+	bankHeader = "!Type:Bank"
+	cashHeader = "!Type:Cash"
+	cardHeader = "!Type:CCard"
+	recordEnd  = "^"
+)
 
 // A Reader consumes QIF data and returns parsed transactions.
 type Reader interface {
 
-	// Read returns the next transaction from the input data.
+	// Read returns the next transaction from the input data. Returns nil if
+	// the end of the input has been reached. If the input ends without a
+	// terminating '^' symbol, the result will be the transaction data read
+	// thus far and a RecordEndError.
 	Read() (Transaction, error)
 
-	// ReadAll returns all the remaining transactions from the input data.
+	// ReadAll returns all the remaining transactions from the input data. It
+	// returns the same errors as Read.
 	ReadAll() ([]Transaction, error)
 }
 
+// reader implements Reader. Construct using NewReader or NewReaderWithConfig.
 type reader struct {
-	in           *bufio.Scanner
-	config       Config
+
+	// in scans the input.
+	in *bufio.Scanner
+
+	// config defines the behaviour of the reader.
+	config Config
+
+	// headerParsed is true if the header line has been read from the input
+	// data.
 	headerParsed bool
 }
 
@@ -69,6 +70,8 @@ func NewReaderWithConfig(r io.Reader, config Config) *reader {
 	}
 }
 
+// parseHeader reads the first line of the input and validates the header. An
+// error is returned if the input is empty or the wrong type of header is found.
 func (r *reader) parseHeader() error {
 	if !r.in.Scan() {
 		if err := r.in.Err(); err != nil {
@@ -79,7 +82,7 @@ func (r *reader) parseHeader() error {
 	}
 
 	switch r.in.Text() {
-	case "!Type:Bank", "!Type:Cash", "!Type:CCard":
+	case bankHeader, cashHeader, cardHeader:
 		r.headerParsed = true
 		return nil
 
@@ -88,6 +91,7 @@ func (r *reader) parseHeader() error {
 	}
 }
 
+// Read implements Reader.Read.
 func (r *reader) Read() (Transaction, error) {
 
 	if !r.headerParsed {
@@ -97,13 +101,48 @@ func (r *reader) Read() (Transaction, error) {
 		}
 	}
 
-	for r.in.Scan() {
+	// Only one type supported at the moment
+	tx := &bankingTransaction{}
+	data := false
 
+	for r.in.Scan() {
+		data = true
+		line := r.in.Text()
+
+		if line == recordEnd {
+			return tx, nil
+		}
+
+		err := tx.parseBankingTransactionField(r.in.Text(), r.config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return nil, nil
+	if !data {
+		// We were at the end of the file
+		return nil, nil
+	}
+
+	return nil, RecordEndError{Incomplete: tx}
 }
 
+// ReadAll implements Reader.ReadAll.
 func (r *reader) ReadAll() ([]Transaction, error) {
-	return nil, nil
+	var result []Transaction
+
+	for {
+		tx, err := r.Read()
+		if err != nil {
+			return nil, err
+		}
+
+		if tx == nil {
+			break
+		}
+
+		result = append(result, tx)
+	}
+
+	return result, nil
 }
