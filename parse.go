@@ -30,9 +30,9 @@ type Config struct {
 
 // DefaultConfig returns the default configuration used by NewReader:
 //
-//   Config{
-//     MonthFirst: true,
-//	 }
+//  Config{
+//    MonthFirst: true,
+//  }
 func DefaultConfig() Config {
 	return Config{
 		MonthFirst: true,
@@ -55,10 +55,12 @@ type reader struct {
 	headerParsed bool
 }
 
+// NewReader creates a new Reader with a default configuration (see DefaultConfig).
 func NewReader(r io.Reader) *reader {
 	return NewReaderWithConfig(r, DefaultConfig())
 }
 
+// NewReaderWithConfig creates a new Reader with the specified configuration.
 func NewReaderWithConfig(r io.Reader, config Config) *reader {
 	return &reader{
 		in:     bufio.NewScanner(r),
