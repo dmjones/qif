@@ -1,5 +1,5 @@
-# QIF Parser
+# qif
 
-A Go library for parsing Quicken Interchange Format (QIF) files.
-
-This is a work in progress, docs will be provided when a first version is complete.
+qif is a Go module for parsing Quicken Interchange Format (QIF) files. Currently
+only the cash flow account types are supported (!Type:Cash, !Type:Bank and
+!Type:CCard).
