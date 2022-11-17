@@ -25,6 +25,7 @@ const (
 	bankHeader = "!Type:Bank"
 	cashHeader = "!Type:Cash"
 	cardHeader = "!Type:CCard"
+	invstHeader = "!Type:Invst"
 	recordEnd  = "^"
 )
 
@@ -93,11 +94,13 @@ func (r *reader) parseHeader() error {
 	case bankHeader, cashHeader, cardHeader:
 		r.transactionType = TransactionTypeBanking
 		r.headerParsed = true
-		return nil
-
+	case invstHeader:
+		r.transactionType = TransactionTypeInvestment
+		r.headerParsed = true
 	default:
 		return errors.Errorf("unsupported header type '%s'", r.in.Text())
 	}
+	return nil
 }
 
 // Read implements Reader.Read.
@@ -112,8 +115,9 @@ func (r *reader) Read() (Transaction, error) {
 	}
 
 	// Parse type based on r.transactionType (set by parseHeader)
-	// Only one type supported at the moment
 	switch r.transactionType {
+	case TransactionTypeInvestment:
+		tx = &investmentTransaction{}
 	default:
 		tx = &bankingTransaction{}
 	}

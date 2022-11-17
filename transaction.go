@@ -33,6 +33,7 @@ type TransactionType uint
 const (
 	TransactionTypeUndefined TransactionType = iota
 	TransactionTypeBanking
+	TransactionTypeInvestment
 )
 
 type ClearedStatus int
