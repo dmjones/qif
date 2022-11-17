@@ -28,6 +28,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+type TransactionType uint
+
+const (
+	TransactionTypeUndefined TransactionType = iota
+	TransactionTypeBanking
+)
+
 type ClearedStatus int
 
 const (
@@ -60,6 +67,8 @@ type Transaction interface {
 	// UnknownStatus if the transaction data did not specify a value for this
 	// field.
 	Status() ClearedStatus
+
+	parseTransactionTypeField(line string, config Config) error
 }
 
 type transaction struct {

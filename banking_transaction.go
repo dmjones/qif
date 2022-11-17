@@ -160,6 +160,11 @@ func (t *bankingTransaction) parseBankingTransactionField(line string,
 	}
 }
 
+func (t *bankingTransaction) parseTransactionTypeField(line string,
+						       config Config) error {
+	return t.parseBankingTransactionField(line, config)
+}
+
 // A Split is used to tag part of a transaction with a separate category and
 // description.
 type Split struct {
