@@ -28,10 +28,8 @@ func TestDateParse(t *testing.T) {
 	inputs := []string{
 		"1 March 2017",
 		"1 March 17",
-		"1 March '7",
 		"03/01/2017",
 		"03/01/17",
-		"03/01/'7",
 		"3/ 1/2017",
 		"03/1/2017",
 	}
