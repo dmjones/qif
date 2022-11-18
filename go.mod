@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/pkg/errors v0.8.0
+	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.2.2
 )
 

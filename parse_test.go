@@ -15,6 +15,7 @@
 package qif
 
 import (
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -115,6 +116,7 @@ func TestSpecExample1(t *testing.T) {
 	expected1.date, err = time.Parse("1/ 2/06", "6/ 1/94")
 	require.NoError(t, err)
 	expected1.amount = -100000
+	expected1.amountDecimal,_ = decimal.NewFromString("-1000.00")
 
 	expected2 := &bankingTransaction{
 		payee: "Deposit",
@@ -122,6 +124,7 @@ func TestSpecExample1(t *testing.T) {
 	expected2.date, err = time.Parse("1/ 2/06", "6/ 2/94")
 	require.NoError(t, err)
 	expected2.amount = 7500
+	expected2.amountDecimal,_ = decimal.NewFromString("75.00")
 
 	expected3 := &bankingTransaction{
 		payee:    "Anthony Hopkins",
@@ -131,6 +134,7 @@ func TestSpecExample1(t *testing.T) {
 	expected3.date, err = time.Parse("1/ 2/06", "6/ 3/94")
 	require.NoError(t, err)
 	expected3.amount = -1000
+	expected3.amountDecimal,_ = decimal.NewFromString("-10.00")
 	expected3.memo = "Film"
 
 	expected := []Transaction{expected1, expected2, expected3}
