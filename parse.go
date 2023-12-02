@@ -25,6 +25,7 @@ const (
 	bankHeader = "!Type:Bank"
 	cashHeader = "!Type:Cash"
 	cardHeader = "!Type:CCard"
+	invstHeader = "!Type:Invst"
 	recordEnd  = "^"
 )
 
@@ -40,6 +41,11 @@ type Reader interface {
 	// ReadAll returns all the remaining transactions from the input data. It
 	// returns the same errors as Read.
 	ReadAll() ([]Transaction, error)
+
+	// Informs what is class of transactions returned by Read() or ReadAll(),
+	// so that transactions can be typecast to BankingTransaction or to
+	// InvestmentTransaction.
+	ReadTransactionType() TransactionType
 }
 
 // reader implements Reader. Construct using NewReader or NewReaderWithConfig.
@@ -54,6 +60,9 @@ type reader struct {
 	// headerParsed is true if the header line has been read from the input
 	// data.
 	headerParsed bool
+
+	// type of Transactions to be parsed (determined during ParseHeader)
+	transactionType TransactionType
 }
 
 // NewReader creates a new Reader with a default configuration (see
@@ -83,16 +92,20 @@ func (r *reader) parseHeader() error {
 
 	switch r.in.Text() {
 	case bankHeader, cashHeader, cardHeader:
+		r.transactionType = TransactionTypeBanking
 		r.headerParsed = true
-		return nil
-
+	case invstHeader:
+		r.transactionType = TransactionTypeInvestment
+		r.headerParsed = true
 	default:
 		return errors.Errorf("unsupported header type '%s'", r.in.Text())
 	}
+	return nil
 }
 
 // Read implements Reader.Read.
 func (r *reader) Read() (Transaction, error) {
+	var tx Transaction
 
 	if !r.headerParsed {
 		err := r.parseHeader()
@@ -101,8 +114,13 @@ func (r *reader) Read() (Transaction, error) {
 		}
 	}
 
-	// Only one type supported at the moment
-	tx := &bankingTransaction{}
+	// Parse type based on r.transactionType (set by parseHeader)
+	switch r.transactionType {
+	case TransactionTypeInvestment:
+		tx = &investmentTransaction{}
+	default:
+		tx = &bankingTransaction{}
+	}
 	data := false
 
 	for r.in.Scan() {
@@ -113,7 +131,7 @@ func (r *reader) Read() (Transaction, error) {
 			return tx, nil
 		}
 
-		err := tx.parseBankingTransactionField(r.in.Text(), r.config)
+		err := tx.parseTransactionTypeField(r.in.Text(), r.config)
 		if err != nil {
 			return nil, err
 		}
@@ -145,4 +163,8 @@ func (r *reader) ReadAll() ([]Transaction, error) {
 	}
 
 	return result, nil
+}
+
+func (r *reader) ReadTransactionType() TransactionType {
+	return r.transactionType
 }

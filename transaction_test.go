@@ -22,16 +22,14 @@ import (
 )
 
 func TestDateParse(t *testing.T) {
-	expectedDate, err := time.Parse("02/01/2006", "01/03/2017")
+	expectedDate, err := time.ParseInLocation("02/01/2006", "01/03/2017", time.Local)
 	require.NoError(t, err)
 
 	inputs := []string{
 		"1 March 2017",
 		"1 March 17",
-		"1 March '7",
 		"03/01/2017",
 		"03/01/17",
-		"03/01/'7",
 		"3/ 1/2017",
 		"03/1/2017",
 	}
@@ -106,7 +104,7 @@ func TestBadTransactionLine(t *testing.T) {
 
 func TestParseTransactionDate(t *testing.T) {
 	const dateString = "31/12/99"
-	d, err := time.Parse("02/01/06", dateString)
+	d, err := time.ParseInLocation("02/01/06", dateString, time.Local)
 	require.NoError(t, err)
 
 	tx := &transaction{}

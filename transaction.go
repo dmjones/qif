@@ -24,7 +24,16 @@ import (
 
 	"strings"
 
+	"github.com/shopspring/decimal"
 	"github.com/pkg/errors"
+)
+
+type TransactionType uint
+
+const (
+	TransactionTypeUndefined TransactionType = iota
+	TransactionTypeBanking
+	TransactionTypeInvestment
 )
 
 type ClearedStatus int
@@ -49,6 +58,9 @@ type Transaction interface {
 	// instance, a $12.99 transaction will be 1299.
 	Amount() int
 
+	// Amount stored as decimal.Decimal
+	AmountDecimal() decimal.Decimal
+
 	// Memo is a string description of the transaction.
 	Memo() string
 
@@ -56,11 +68,14 @@ type Transaction interface {
 	// UnknownStatus if the transaction data did not specify a value for this
 	// field.
 	Status() ClearedStatus
+
+	parseTransactionTypeField(line string, config Config) error
 }
 
 type transaction struct {
 	date   time.Time
 	amount int
+	amountDecimal decimal.Decimal
 	memo   string
 	status ClearedStatus
 }
@@ -71,6 +86,10 @@ func (t *transaction) Date() time.Time {
 
 func (t *transaction) Amount() int {
 	return t.amount
+}
+
+func (t *transaction) AmountDecimal() decimal.Decimal {
+	return t.amountDecimal
 }
 
 func (t *transaction) Memo() string {
@@ -96,12 +115,14 @@ func (t *transaction) parseTransactionField(line string, config Config) error {
 		return nil
 
 	case 'T', 'U': // Wikipedia suggests 'U' is a synonym for 'T'
-		amt, err := parseAmount(line[1:])
+		amount := strings.Replace(line[1:], ",", "", -1)
+		amt, err := parseAmount(amount)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse amount")
 		}
 		t.amount = amt
-		return nil
+		t.amountDecimal, err = decimal.NewFromString(amount)
+		return err
 
 	case 'M':
 		t.memo = line[1:]
@@ -201,7 +222,7 @@ func parseDate(s string, dayFirst bool) (date time.Time, err error) {
 	}
 
 	for _, f := range formats {
-		date, err = time.Parse(f, sMod)
+		date, err = time.ParseInLocation(f, sMod, time.Local)
 		if err == nil {
 			return
 		}
